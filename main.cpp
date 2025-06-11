@@ -1,4 +1,4 @@
-#include <conditional_variable>
+#include <condition_variable>
 #include <iostream>
 #include <mutex>
 #include <queue>
@@ -6,22 +6,10 @@
 
 using namespace std;
 
-// TODO:
-// 1. Build a queue -> Done
-// 2. make it thread safe -> Done
-// 3. put it behind tcp socket
-//
-//
-// interface/api?
-//
-// pop, push, try_pop, empty?
-// top ?
-//
-
 template <typename T> class Brate {
   queue<T> q_;
   mutable mutex lock_;
-  conditional_variable cv;
+  condition_variable cv;
 
 public:
   Brate() = default;
@@ -39,10 +27,9 @@ public:
   }
   // pop an item
   T Pop() {
-    // TODO: maybe use a unique lock
-    std::lock_guard<mutex> lock(lock_);
+    std::unique_lock<mutex> lock(lock_);
     cv.wait(lock,
-            [] { return q_.empty(); }); // wait till current queue is empty
+            [this] { return !q_.empty(); }); // wait till current queue is empty
     T item = q_.front();
     q_.pop();
     return item;
